@@ -12,30 +12,30 @@ import (
 )
 
 type Movie struct {
-	ID string `json:"id"`
-	Isbn string `json:"isbn"`
-	Title string `json:"title"`
+	ID       string    `json:"id"`
+	Isbn     string    `json:"isbn"`
+	Title    string    `json:"title"`
 	Director *Director `json:"director"`
 }
 
 type Director struct {
 	Firstname string `json:"firstname"`
-	Lastname string `json:"lastname"`
+	Lastname  string `json:"lastname"`
 }
 
 var movies []Movie
 
-func getMovies(w http.ResponseWriter, r *http.Request){
+func getMovies(w http.ResponseWriter, r *http.Request) {
 	//set headers
 	w.Header().Set("Content-Type:", "application/json")
 
 	//error validation
-	if (r.Method != "GET"){
+	if r.Method != "GET" {
 		fmt.Printf("invalid request method")
 	}
 
 	//error validation
-	if (r.URL.Path != "/movies"){
+	if r.URL.Path != "/movies" {
 		fmt.Printf("invalid request method")
 	}
 
@@ -44,7 +44,7 @@ func getMovies(w http.ResponseWriter, r *http.Request){
 	fmt.Fprintf(w, "Movies: %v", movies)
 }
 
-func createMovie(w http.ResponseWriter, r *http.Request){
+func createMovie(w http.ResponseWriter, r *http.Request) {
 	//set headers
 	w.Header().Set("Content-Type", "application/json")
 
@@ -63,45 +63,66 @@ func createMovie(w http.ResponseWriter, r *http.Request){
 	// fmt.Fprintf(w, "Created Movie: %v", movie)
 }
 
-func deleteMovie(w http.ResponseWriter, r *http.Request){
+func deleteMovie(w http.ResponseWriter, r *http.Request) {
 	//set headers
 	w.Header().Set("Content-Type", "application/json")
-
-	//create movie variable
-	var movie Movie
 
 	//get params from vars
 	params := mux.Vars(r)
 
 	//cycle through movies slice and delete specified id
 	for index, item := range movies {
-		if (item.ID == params["id"]){
-			return movies(movies[:index], movies[index+1:]...)
+		if item.ID == params["id"] {
+			movies = append(movies[:index], movies[index+1:]...)
+			break
 		}
 	}
-	json.NewEncoder(w).Encode(movie)
+	json.NewEncoder(w).Encode(movies)
 
 }
 
-func getMovie(w http.ResponseWriter, r *http.Request){
-	//set headers 
+func getMovie(w http.ResponseWriter, r *http.Request) {
+	//set headers
 	w.Header().Set("Content-Type", "application/json")
 
 	//get the params from vars
 	params := mux.Vars(r)
 
-	//create movie variable
-	var movie Movie
+	//cycle through movies slice and compare params id to movie id
+	for _, item := range movies {
+		if item.ID == params["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+}
+
+func updateMovie(w http.ResponseWriter, r *http.Request) {
+	//set headers
+	w.Header().Set("Content-Type", "application/json")
+
+	//get the params from vars
+	params := mux.Vars(r)
 
 	//cycle through movies slice and compare params id to movie id
 	for index, item := range movies {
-		if (item.ID == params["id"]){
-			return index[movie]
+		if item.ID == params["id"] {
+			movies = append(movies[:index], movies[index+1:]...)
 		}
 	}
+
+	//create movie variable
+	var movie Movie
+
+	//read incoming json body
+	_ = json.NewDecoder(r.Body).Decode(&movie)
+
+	movie.ID = params["id"]
+	movies = append(movies, movie)
+
+	//return movie
 	json.NewEncoder(w).Encode(movie)
 }
-
 
 func main() {
 	r := mux.NewRouter()
@@ -111,11 +132,11 @@ func main() {
 
 	r.HandleFunc("/movies", getMovies).Methods("GET")
 	r.HandleFunc("/movies/{id}", getMovie).Methods("GET")
-	// r.HandleFunc("/movies", createMovie).Methods("POST")
+	r.HandleFunc("/movies", createMovie).Methods("POST")
 	// r.HandleFunc("/movies", updateMovie).Methods("PATCH")
-	// r.HandleFunc("/movies", deleteMovie).Methods("DELETE")
+	r.HandleFunc("/movies", deleteMovie).Methods("DELETE")
 
 	fmt.Printf("server started on port 8000")
-	log.Fatal(http.ListenAndServe(":8000", r)) 
+	log.Fatal(http.ListenAndServe(":8000", r))
 
 }
