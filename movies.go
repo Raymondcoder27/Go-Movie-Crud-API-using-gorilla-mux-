@@ -99,6 +99,6 @@ func main() {
 	r.HandleFunc("/movies/{id}", updateMovie).Methods("PUT")
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
-	fmt.Printf("Starting server on port 8080.\n")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	fmt.Printf("Starting server on port 3000.\n")
+	log.Fatal(http.ListenAndServe(":3000", r))
 }
